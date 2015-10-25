@@ -15,3 +15,7 @@
 /log/*
 !/log/.keep
 /tmp
+
+# git ignore all RubyFann training files
+/tmp/trainning/*.train
+/tmp/trainning/*.txt

@@ -1,163 +1,207 @@
 require 'rmagick'
 require 'ruby-fann'
+require 'json'
 include Magick
 
-BASE_DIR      = "/home/Projects/neural_network_project"
-DIGITS_DIR    = "#{BASE_DIR}/Digits"
-LIB_DIR       = "#{BASE_DIR}/lib"
-JPGS_DIR      = "#{DIGITS_DIR}/jpgs"
-CONVERTED_DIR = "#{DIGITS_DIR}/converted"
+BASE_DIR        = "/home/Projects/neural_network_project"
+DIGITS_DIR      = "#{BASE_DIR}/Digits"
+LIB_DIR         = "#{BASE_DIR}/lib"
+JPGS_DIR        = "#{DIGITS_DIR}/jpgs"
+CONVERTED_DIR   = "#{DIGITS_DIR}/converted"
 
-@all_images = []
+FOR_TESTING_DIR           = "#{JPGS_DIR}/notLearned"
+FOR_TESTING_CONVERTED_DIR = "#{CONVERTED_DIR}/notLearned"
 
-def convert_jpgs_to_pngs
+#
+# To use
+# image = ImageList.new(file)
+# image[0].fuzz=10
+# image[0].trim.resize(50,50).write(converted_file)
+
+def convert_images_for_trainning
   (0..9).each do |digit|
     cont = 0
     jpg_images = Dir["#{JPGS_DIR}/#{digit}/*.jpg"]
 
     jpg_images.each do |filepath|
       new_filepath = "#{CONVERTED_DIR}/#{digit}/#{cont}.png"
-      rmagick_image = ImageList.new("#{filepath}").resize_to_fit(50, 50)
-      rmagick_image.write(new_filepath)
+      rmagick_image = ImageList.new("#{filepath}")
+      rmagick_image[0].fuzz=10 
+      rmagick_image[0].trim.resize(30, 50).write(new_filepath)
       @all_images << new_filepath
       cont += 1
     end
   end
 end
 
-# Convert images
-convert_jpgs_to_pngs
-puts 'Status: images converted'
-puts "all_images size = #{@all_images.size}"
+def convert_images_for_testing
+  cont = 0
+  images = Dir["#{FOR_TESTING_DIR}/*.jpg"]
 
-input_arrays = []
-
-@all_images.each_with_index do |image, idx|
-  puts ("#{idx}#{image}")
-  
-  rmagick_image = ImageList.new(image)
-  image_pixels = []
-
-  rmagick_image.each_pixel do |px, x, y|
-    if px.red == 0 # && px.green == 0 && px.blue == 0
-      image_pixels << 1
-    else
-      image_pixels << 0
-    end
+  images.each do |filepath|
+    filename = filepath.match(/\/(..)\.jpg/) { $1 }
+    puts filename
+    new_filepath = "#{FOR_TESTING_CONVERTED_DIR}/#{filename}.png"
+    rmagick_image = ImageList.new("#{filepath}")
+    rmagick_image[0].fuzz=50 
+    rmagick_image.trim.resize(30, 50).write(new_filepath)
+    @all_images_for_testing << new_filepath
+    cont += 1
   end
-
-  input_arrays << image_pixels
-
 end
 
-to_test = input_arrays[0]
+def create_array_of_arrays_trainning
+  @all_images.each_with_index do |image, idx|
+    puts ("#{idx}#{image}")
+    
+    rmagick_image = ImageList.new(image)
+    image_pixels = []
 
-RubyFann::TrainData.new(:filename => "#{LIB_DIR}/training_file.train")
+    rmagick_image.each_pixel do |px, x, y|
+      if px.red == 0 # && px.green == 0 && px.blue == 0
+        image_pixels << 1
+      else
+        image_pixels << 0
+      end
+    end
+    @input_arrays << image_pixels
+  end
+end
 
-train = RubyFann::TrainData.new(
-  inputs: 
-    # [0,0,1,0,1,1,0,0,1,0,0,1,0,0,1], [1,1,1,0,0,1,1,1,1,1,0,0,1,1,1],
-    # [1,1,1,0,0,1,1,1,1,0,0,1,1,1,1], [1,0,1,1,0,1,1,1,1,0,0,1,0,0,1],
-    # [1,1,1,1,0,0,1,1,1,0,0,1,1,1,1], [1,1,1,1,0,0,1,1,1,1,0,1,1,1,1],
-    # [1,1,1,0,0,1,0,1,0,1,0,0,1,0,0], [1,1,1,1,0,1,1,1,1,1,0,1,1,1,1],
-    # [1,1,1,1,0,1,1,1,1,0,0,1,1,1,1]
-    input_arrays,
-  desired_outputs: [
-    # Digit 0
-    [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0],
-    [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0],
-    [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0],
-    [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0],
-    [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0],
-    [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0],
-    [1,0,0,0,0,0,0,0,0,0], [1,0,0,0,0,0,0,0,0,0],
-    # Digit 1
-    [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0],
-    [0,1,0,0,0,0,0,0,0,0], [0,1,0,0,0,0,0,0,0,0],
-    # Digit 3
-    [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0],
-    [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0],
-    [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0],
-    [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0],
-    [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0],
-    [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0],
-    [0,0,1,0,0,0,0,0,0,0], [0,0,1,0,0,0,0,0,0,0],
-    # Digit 4
-    [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0],
-    [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0],
-    [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0],
-    [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0],
-    [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0],
-    [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0],
-    [0,0,0,1,0,0,0,0,0,0], [0,0,0,1,0,0,0,0,0,0],
-    # Digit 5
-    [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0],
-    [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0],
-    [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0],
-    [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0],
-    [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0],
-    [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0],
-    [0,0,0,0,1,0,0,0,0,0], [0,0,0,0,1,0,0,0,0,0],
-    # Digit 6
-    [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0],
-    [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0],
-    [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0],
-    [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0],
-    [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0],
-    [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0],
-    [0,0,0,0,0,1,0,0,0,0], [0,0,0,0,0,1,0,0,0,0],
-    # Digit 8
-    [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0],
-    [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0],
-    [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0],
-    [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0],
-    [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0],
-    [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0],
-    [0,0,0,0,0,0,1,0,0,0], [0,0,0,0,0,0,1,0,0,0],
-    # Digit 8
-    [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0],
-    [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0],
-    [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0],
-    [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0],
-    [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0],
-    [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0],
-    [0,0,0,0,0,0,0,1,0,0], [0,0,0,0,0,0,0,1,0,0],
-    # Digit 9
-    [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0],
-    [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0],
-    [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0],
-    [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0],
-    [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0],
-    [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0],
-    [0,0,0,0,0,0,0,0,1,0], [0,0,0,0,0,0,0,0,1,0],
-    # Digit 10
-    [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1],
-    [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1],
-    [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1],
-    [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1],
-    [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1],
-    [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1],
-    [0,0,0,0,0,0,0,0,0,1], [0,0,0,0,0,0,0,0,0,1]
-  ]
+def create_array_of_arrays_testing
+  @all_images_for_testing.each_with_index do |image, idx|
+    puts ("#{idx}#{image}")
+    
+    rmagick_image = ImageList.new(image)
+    image_pixels = []
+
+    rmagick_image.each_pixel do |px, x, y|
+      if px.red == 0 # && px.green == 0 && px.blue == 0
+        image_pixels << 1
+      else
+        image_pixels << 0
+      end
+    end
+    @testing_input_arrays << image_pixels
+  end
+end
+
+
+@all_images = []
+# Convert images
+convert_images_for_trainning
+puts 'Status: images converted'
+
+# Prepare inputs for Neural Network
+@input_arrays = []
+create_array_of_arrays_trainning
+
+#
+@all_images_for_testing = []
+convert_images_for_testing
+
+#
+@testing_input_arrays = []
+create_array_of_arrays_testing
+
+# RubyFann::TrainData.new(:filename => "#{LIB_DIR}/training_file.train")
+
+amount_of_each_digit = Dir["#{JPGS_DIR}/0/*.jpg"].size
+puts amount_of_each_digit
+@desired_outputs = []
+
+# amount of times each desired output
+# Digit 0
+amount_of_each_digit.times do
+   @desired_outputs << [1,0,0,0,0,0,0,0,0,0]
+end
+# Digit 1
+amount_of_each_digit.times do
+   @desired_outputs << [0,1,0,0,0,0,0,0,0,0]
+end
+# Digit 2
+amount_of_each_digit.times do
+   @desired_outputs << [0,0,1,0,0,0,0,0,0,0]
+end
+# Digit 3
+amount_of_each_digit.times do
+   @desired_outputs << [0,0,0,1,0,0,0,0,0,0]
+end
+# Digit 4
+amount_of_each_digit.times do
+   @desired_outputs << [0,0,0,0,1,0,0,0,0,0]
+end
+# Digit 5
+amount_of_each_digit.times do
+   @desired_outputs << [0,0,0,0,0,1,0,0,0,0]
+end
+# Digit 6
+amount_of_each_digit.times do
+   @desired_outputs << [0,0,0,0,0,0,1,0,0,0]
+end
+# Digit 7
+amount_of_each_digit.times do
+   @desired_outputs << [0,0,0,0,0,0,0,1,0,0]
+end
+# Digit 8
+amount_of_each_digit.times do
+   @desired_outputs << [0,0,0,0,0,0,0,0,1,0]
+end
+# Digit 9
+amount_of_each_digit.times do
+   @desired_outputs << [0,0,0,0,0,0,0,0,0,1]
+end
+
+@train = RubyFann::TrainData.new(
+  inputs: @input_arrays,
+  desired_outputs: @desired_outputs
+    
+
 )
 
-fann = RubyFann::Standard.new(
-  num_inputs: 2500,
-  hidden_neurons: [500],
-  num_outputs: 10
-)
+def execute_trainning_and_comparison(hid_neuron_value)
+  @fann = RubyFann::Standard.new(
+    num_inputs: @input_arrays[1].size,
+    hidden_neurons: [hid_neuron_value],
+    num_outputs: 10
+  )
 
-# fann.learning_rate = 0.5
-# fann.momentum = 0.5
+  @fann.train_on_data(@train, 10000, 100, 0.001)
+  @fann.save("#{LIB_DIR}/training_file#{hid_neuron_value}.train")
 
-fann.train_on_data(train, 10000, 10, 0.001)
-fann.save("#{LIB_DIR}/training_file.train")
-outputs = fann.run(to_test)
-puts outputs
-# m = outputs.max
-# puts "Result: #{( outputs.find_index { |x| x == m } ) + 1}"
+  results = []
+
+  @correct_answers = 0
+  @testing_input_arrays.each_with_index do |arr, idx|
+    outputs              = @fann.run(arr)
+    # outputs              = outputs.select{|a| a.to_f > 0.to_f }
+    # size_bigger_than_one = outputs.size
+    # size_uniq            = outputs.uniq.size
+    # if size_bigger_than_one == size_uniq 
+    #   answer = outputs.each.max[1]
+    #   @correct_answers += 1 if answer.to_s == idx.to_s
+    # end
+    # puts "outputs.size: #{outputs.size}"
+    # puts outputs
+    # correct_answers += 1 if outputs.each_with_index.max[1] == idx
+    results << outputs
+  end
+  File.open("#{hid_neuron_value} neurons.txt", "w") { |file| file.write(JSON.pretty_generate(results)) }  
+end
+
+puts "sizes of everything \n"
+puts "all_images: #{@all_images.size}"
+puts "all_images_for_testing: #{@all_images_for_testing.size}"
+puts "input_arrays: #{@input_arrays.size}"
+puts "size of input array[1]: #{@input_arrays[1].size}"
+puts "testing_input_arrays: #{@testing_input_arrays.size}"
+
+neurons = 0
+(1..25).each do |num|
+  puts "Execution number: #{num}"
+  execute_trainning_and_comparison(neurons + (num * 50))
+end
+
+# array = [1,2,3,4,5,6,6]
+# max = array.max
+# max_idx = array.each_with_index.max[1]
