@@ -1,8 +1,8 @@
 require 'rmagick'
 require 'ruby-fann'
 require 'json'
-include Magick
 require 'base64'
+include Magick
 
 BASE_DIR        = "/home/Projects/neural_network_project"
 DIGITS_DIR      = "#{BASE_DIR}/Digits"
@@ -156,7 +156,7 @@ def execute_trainning_and_comparison(hid_neuron_value)
   results = []
 
   @testing_input_arrays.each_with_index do |arr, idx|
-    outputs              = @fann.run(arr)
+    outputs = @fann.run(arr)
 
     results << outputs
   end

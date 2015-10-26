@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   get   'welcome/index'
   root  'welcome#index'
 
+  post '/recognize' => 'welcome#recognize'
+
   #get 'controller/main'
 
   # The priority is based upon order of creation: first created -> highest priority.

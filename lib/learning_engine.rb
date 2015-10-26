@@ -8,6 +8,7 @@ DIGITS_DIR      = "#{BASE_DIR}/Digits"
 LIB_DIR         = "#{BASE_DIR}/lib"
 JPGS_DIR        = "#{DIGITS_DIR}/jpgs"
 CONVERTED_DIR   = "#{DIGITS_DIR}/converted"
+TRAINNING_DIR   = "#{BASE_DIR}/tmp/trainning"
 
 FOR_TESTING_DIR           = "#{JPGS_DIR}/notLearned"
 FOR_TESTING_CONVERTED_DIR = "#{CONVERTED_DIR}/notLearned"
@@ -21,6 +22,7 @@ FOR_TESTING_CONVERTED_DIR = "#{CONVERTED_DIR}/notLearned"
 def convert_images_for_trainning
   (0..9).each do |digit|
     cont = 0
+    %x( rm -rf #{CONVERTED_DIR}/#{digit}/*.* )
     jpg_images = Dir["#{JPGS_DIR}/#{digit}/*.jpg"]
 
     jpg_images.each do |filepath|
@@ -166,8 +168,8 @@ def execute_trainning_and_comparison(hid_neuron_value)
     num_outputs: 10
   )
 
-  @fann.train_on_data(@train, 10000, 100, 0.001)
-  @fann.save("#{LIB_DIR}/training_file#{hid_neuron_value}.train")
+  @fann.train_on_data(@train, 100, 100, 0.001)
+  @fann.save("#{TRAINNING_DIR}/training_file#{hid_neuron_value}.train")
 
   results = []
 
@@ -186,7 +188,7 @@ def execute_trainning_and_comparison(hid_neuron_value)
     # correct_answers += 1 if outputs.each_with_index.max[1] == idx
     results << outputs
   end
-  File.open("#{hid_neuron_value} neurons.txt", "w") { |file| file.write(JSON.pretty_generate(results)) }  
+  File.open("#{TRAINNING_DIR}/#{hid_neuron_value} neurons.txt", "w") { |file| file.write(JSON.pretty_generate(results)) }  
 end
 
 puts "sizes of everything \n"
@@ -196,12 +198,8 @@ puts "input_arrays: #{@input_arrays.size}"
 puts "size of input array[1]: #{@input_arrays[1].size}"
 puts "testing_input_arrays: #{@testing_input_arrays.size}"
 
-neurons = 0
-(1..25).each do |num|
+neurons = 1350
+(1..3).each do |num|
   puts "Execution number: #{num}"
   execute_trainning_and_comparison(neurons + (num * 50))
 end
-
-# array = [1,2,3,4,5,6,6]
-# max = array.max
-# max_idx = array.each_with_index.max[1]
