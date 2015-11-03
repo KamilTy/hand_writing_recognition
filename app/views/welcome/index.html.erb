@@ -1,11 +1,20 @@
-<body>
+<div class="container">
+
   <div id='top'>
   <h1>Projeto de Rede Neural Artificial</h1>
-  <p>Reconhecimento de digitos</p>
-  <canvas id="can" width="200" height="200" style="position:absolute;top:115px;left:30px;border:2px solid;background:white;"></canvas>
-  <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
-  <button type="button" id="recognize" style="position:absolute;top:325px;left:30px;">Recognize</button>
-  <button type="button" id="clear" style="position:absolute;top:325px;left:120px;">Clear</button>
-  <div id='result' style="position:absolute;top:385px;left:120px;">-</div>
   </div>
-</body>
+  <div id='main-row' class="row">
+    <div class="col-sm-6">
+      <p>Reconhecimento de digitos</p>
+      <div id="canvas-div"></div>
+      <button type="button" class="btn btn-primary" id="recognize">Recognize</button>
+      <button type="button" class="btn btn-default" id="clear">Clear</button>
+    </div>
+    <div class="col-sm-6">
+      <p>Resultado</p>
+      <img id="canvasimg" style="display:none;">
+      <div id='result'></div>
+    </div>
+  </div>
+
+</div>

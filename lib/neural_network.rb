@@ -46,9 +46,15 @@ class NeuralNetwork
 
   def get_answer(outputs)
     # highest_value = outputs.each_with_index.max
+    puts outputs.max
     highest_value = outputs.index(outputs.max)
     puts highest_value
-    highest_value
+    if outputs.max > 0.80
+      answer = highest_value
+    else
+      answer = "?"
+    end
+    answer
   end
 
   def recognize

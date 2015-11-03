@@ -14,48 +14,74 @@ jQuery ->
   dot_flag = false
   x = 'black'
   y = 5
+  w = 200
+  h = 200
 
-  canvas = document.getElementById('can')
-  ctx = canvas.getContext('2d')
-  ctx.fillStyle = "white"
-  ctx.fillRect 0, 0, 200, 200
-  w = canvas.width
-  h = canvas.height
-  canvas.addEventListener 'mousemove', ((e) ->
-    findxy 'move', e
-    return
-  ), false
-  canvas.addEventListener 'mousedown', ((e) ->
-    findxy 'down', e
-    return
-  ), false
-  canvas.addEventListener 'mouseup', ((e) ->
-    findxy 'up', e
-    return
-  ), false
-  canvas.addEventListener 'mouseout', ((e) ->
-    findxy 'out', e
-    return
-  ), false
+  createCanvas = ->
+    canvas = document.createElement('canvas')
+    canvas.id = "can"
+    canvas.className = "canvas-border"
+    canvas.width = 200
+    canvas.height = 200
+    ctx = canvas.getContext('2d')
+    ctx.fillStyle = "white"
+    ctx.fillRect 0, 0, 200, 200
+    canvas.addEventListener 'mousemove', ((e) ->
+      findxy 'move', e
+      return
+    ), false
+    canvas.addEventListener 'mousedown', ((e) ->
+      findxy 'down', e
+      return
+    ), false
+    canvas.addEventListener 'mouseup', ((e) ->
+      findxy 'up', e
+      return
+    ), false
+    canvas.addEventListener 'mouseout', ((e) ->
+      findxy 'out', e
+      return
+    ), false
+    document.getElementById('canvas-div').appendChild(canvas)
+
+  resetCanvas = () ->
+    ctx = canvas.getContext('2d')
+    ctx.fillStyle = "white"
+    ctx.fillRect 0, 0, 200, 200
+
+  createCanvas()
 
   draw = ->
     ctx.beginPath()
     ctx.moveTo prevX, prevY
     ctx.lineTo currX, currY
-    ctx.strokeStyle = x
+    ctx.strokeStyle = 'black'
     ctx.lineWidth = y
     ctx.stroke()
     ctx.closePath()
 
   erase = ->
-    m = confirm('Want to clear')
-    if m
-      ctx.clearRect 0, 0, w, h
-      document.getElementById('canvasimg').style.display = 'none'
+    swal
+      title: 'Limpar'
+      text: 'Tem certeza?'
+      type: 'warning'
+      showCancelButton: true
+      closeOnConfirm: false
+    , (isConfirm) ->
+      if isConfirm
+        resetCanvas()
+        swal
+          title: 'Erased'
+          text: 'Everything has been erased'
+          type: 'success'
+
+    # m = confirm('Want to clear')
+    # if m
+    #   resetCanvas()
 
   save = (data_url) ->
     document.getElementById('canvasimg').src = data_url
-    document.getElementById('canvasimg').style.display = 'inline'
+    # document.getElementById('canvasimg').style.display = 'inline'
 
   get_image_url = ->
     document.getElementById('canvasimg').style.border = '2px solid'
@@ -65,8 +91,8 @@ jQuery ->
     if res == 'down'
       prevX = currX
       prevY = currY
-      currX = e.clientX - (canvas.offsetLeft)
-      currY = e.clientY - (canvas.offsetTop)
+      currX = e.clientX - document.getElementById('can').offsetLeft - document.getElementsByClassName('container')[0].offsetLeft
+      currY = e.clientY - document.getElementById('main-row').offsetTop - document.getElementById('can').offsetTop + document.documentElement.scrollTop
       flag = true
       dot_flag = true
       if dot_flag
@@ -81,8 +107,8 @@ jQuery ->
       if flag
         prevX = currX
         prevY = currY
-        currX = e.clientX - (canvas.offsetLeft)
-        currY = e.clientY - (canvas.offsetTop)
+        currX = e.clientX - document.getElementById('can').offsetLeft - document.getElementsByClassName('container')[0].offsetLeft
+        currY = e.clientY - document.getElementById('main-row').offsetTop - document.getElementById('can').offsetTop + document.documentElement.scrollTop
         draw()
 
   recognize = (image) ->
@@ -91,10 +117,21 @@ jQuery ->
       type: 'post'
       data:
         image: image
+      beforeSend: () ->
+        swal
+          title: 'Reconhecendo'
+          text: 'Aguarde...'
+          showConfirmButton: false
       success: (data, textStatus, jqXHR) ->
         $('#result').html(jqXHR.responseText)
-      error = (jqXHR, textStatus, errorThrown) ->
-        alert('Erro ' + errorThrown)
+      error: (jqXHR, textStatus, errorThrown) ->
+        swal
+          title: 'Error'
+          text: errorThrown
+          type: 'danger'
+      complete: () ->
+        swal.close()
+        resetCanvas()
 
   $(document).on 'click', '#recognize', ->
     image_url = get_image_url()
@@ -103,3 +140,4 @@ jQuery ->
 
   $(document).on 'click', '#clear', ->
     erase()
+    $('#result').html('')
