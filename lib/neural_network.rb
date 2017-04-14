@@ -3,7 +3,7 @@ require 'ruby-fann'
 require 'base64'
 include Magick
 
-BASE_DIR      = "#{Rails.root.to_s}"
+BASE_DIR      = Rails.root.to_s
 TRAINNING_DIR = "#{BASE_DIR}/tmp/trainning"
 
 SAVED_TRAINNING_FILE = "#{TRAINNING_DIR}/training_file1000.train"
