@@ -6,3 +6,6 @@ Requirements:
 Gems required:
 * rmagick
 * ruby-fann
+
+Description:
+Rails app contains a page with a canvas that allows you to draw numbers in it and a button to recognize drawn digits.
